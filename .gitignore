@@ -1,0 +1,9 @@
+# runtime database (created automatically on first load)
+data/*.sqlite
+data/*.sqlite-*
+# customer/admin uploads
+uploads/products/*
+uploads/branding/*
+!uploads/products/.keep
+!uploads/branding/.keep
+.DS_Store
