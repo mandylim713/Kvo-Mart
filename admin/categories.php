@@ -1,84 +1,43 @@
 <?php
-require __DIR__ . '/_init.php';
-require_admin();
 $pdo = db();
-
 if (is_post()) {
-    csrf_check();
-    $id = (int)post('id');
-    if (post('action') === 'delete') {
-        $n = (int)$pdo->query('SELECT COUNT(*) FROM products WHERE category_id = ' . $id)->fetchColumn();
-        if ($n) flash('error', "This category has $n product(s). Move them to another category first.");
-        else {
-            $img = $pdo->query('SELECT image FROM categories WHERE id = ' . $id)->fetchColumn();
-            delete_upload($img ?: null);
-            $pdo->prepare('DELETE FROM categories WHERE id = ?')->execute([$id]);
-            flash('success', 'Category deleted.');
-        }
-        redirect('admin/categories.php');
+    require_csrf();
+    $cid = (int)post('id');
+    if (post('do') === 'delete') {
+        $c = $pdo->query('SELECT * FROM categories WHERE id = ' . $cid)->fetch();
+        $n = $pdo->prepare('SELECT COUNT(*) FROM products WHERE cat = ?'); $n->execute([$c['slug'] ?? '']);
+        if ($n->fetchColumn()) flash('Move or delete the products in this category first.', 'warn');
+        elseif ($c) { $pdo->prepare('DELETE FROM categories WHERE id = ?')->execute([$cid]); audit('category.deleted', $c['slug']); flash('Category deleted.'); }
+        redirect('/admin/categories');
     }
-    $name = mb_substr(post('name'), 0, 150);
-    if ($name === '') { flash('error', 'Category name is required.'); redirect('admin/categories.php'); }
-    $icon = preg_replace('/[^a-z0-9-]/', '', strtolower(post('icon'))) ?: 'fa-tag';
-    if (strpos($icon, 'fa-') !== 0) $icon = 'fa-' . $icon;
-    $slug = unique_slug('categories', post('slug') ?: $name, $id);
-    $img = upload_image($_FILES['image'] ?? [], 'branding', 900);
-    $data = [$name, $slug, $icon, mb_substr(post('description'), 0, 500), (int)post('sort_order'), post('is_active') ? 1 : 0];
-    if ($id) {
-        $pdo->prepare('UPDATE categories SET name=?, slug=?, icon=?, description=?, sort_order=?, is_active=? WHERE id=?')->execute([...$data, $id]);
-        if ($img) { delete_upload($pdo->query('SELECT image FROM categories WHERE id = ' . $id)->fetchColumn() ?: null); $pdo->prepare('UPDATE categories SET image=? WHERE id=?')->execute([$img, $id]); }
-        flash('success', 'Category updated.');
-    } else {
-        $pdo->prepare('INSERT INTO categories (name, slug, icon, description, sort_order, is_active, image) VALUES (?,?,?,?,?,?,?)')->execute([...$data, $img]);
-        flash('success', 'Category added.');
-    }
-    redirect('admin/categories.php');
+    $e = [];
+    if (mb_strlen(post('name')) < 2) $e['name'] = 'Enter a name.';
+    if (!isset(KINDS[post('kind')])) $e['kind'] = 'Choose the type.';
+    $slug = slugify(post('slug') ?: post('name'));
+    $dup = $pdo->prepare('SELECT COUNT(*) FROM categories WHERE slug = ? AND id != ?'); $dup->execute([$slug, $cid]); if ($dup->fetchColumn()) $e['slug'] = 'Another category uses this web address.';
+    if ($e) fail($e, '/admin/categories' . ($cid ? '?edit=' . $cid : ''));
+    $vals = [mb_substr(post('name'), 0, 150), post('kind'), mb_substr(post('description'), 0, 500), (int)post('sort_order'), post('active') ? 1 : 0];
+    if ($cid) {
+        $old = $pdo->query('SELECT slug FROM categories WHERE id = ' . $cid)->fetchColumn();
+        $pdo->prepare('UPDATE categories SET name=?, kind=?, description=?, sort_order=?, active=?, slug=? WHERE id=?')->execute([...$vals, $slug, $cid]);
+        if ($old !== $slug) $pdo->prepare('UPDATE products SET cat = ? WHERE cat = ?')->execute([$slug, $old]);
+        $pdo->prepare('UPDATE products SET kind = ? WHERE cat = ?')->execute([post('kind'), $slug]);
+    } else $pdo->prepare('INSERT INTO categories (name, kind, description, sort_order, active, slug) VALUES (?,?,?,?,?,?)')->execute([...$vals, $slug]);
+    audit('category.saved', $slug);
+    flash('Category saved.');
+    redirect('/admin/categories');
 }
-
-$edit = null;
-if (get('edit')) { $s = $pdo->prepare('SELECT * FROM categories WHERE id = ?'); $s->execute([(int)get('edit')]); $edit = $s->fetch(); }
-$cats = categories(false);
-$icons = ['fa-basket-shopping','fa-mug-hot','fa-spray-can-sparkles','fa-pump-soap','fa-plug','fa-blender','fa-utensils','fa-baby','fa-shirt','fa-mobile-screen','fa-laptop','fa-tv','fa-couch','fa-bottle-water','fa-apple-whole','fa-drumstick-bite','fa-bread-slice','fa-cookie','fa-wine-bottle','fa-pills','fa-paw','fa-pen','fa-gift','fa-screwdriver-wrench','fa-car','fa-gem','fa-shoe-prints','fa-football','fa-lightbulb','fa-fan','fa-box','fa-tag'];
-
-$adminTitle = 'Categories';
-require __DIR__ . '/_header.php';
-?>
-<div class="split">
-  <div class="card flush-sm">
-    <table class="table cards">
-      <thead><tr><th>Category</th><th>Products</th><th>Order</th><th>Status</th><th></th></tr></thead>
-      <tbody>
-      <?php foreach ($cats as $c): ?>
-        <tr>
-          <td class="t-main"><span class="thumb" style="display:grid;place-items:center;font-size:20px;color:var(--primary);background:var(--soft)"><i class="fa-solid <?= e($c['icon']) ?>"></i></span><div><div class="t-name"><?= e($c['name']) ?></div><div class="t-sub">/<?= e($c['slug']) ?></div></div></td>
-          <td data-label="Products"><?= (int)$c['product_count'] ?></td>
-          <td data-label="Order"><?= (int)$c['sort_order'] ?></td>
-          <td data-label="Status"><span class="pill <?= $c['is_active'] ? 'on' : 'off' ?>"><?= $c['is_active'] ? 'Visible' : 'Hidden' ?></span></td>
-          <td class="t-actions"><div class="btn-row">
-            <a class="btn btn-outline btn-sm" href="?edit=<?= $c['id'] ?>#form"><i class="fa-solid fa-pen"></i></a>
-            <form method="post" data-confirm="Delete this category?"><?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= $c['id'] ?>"><button class="btn btn-danger btn-sm"><i class="fa-regular fa-trash-can"></i></button></form>
-          </div></td>
-        </tr>
-      <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
-  <div class="card" id="form">
-    <h3><?= $edit ? 'Edit category' : 'Add category' ?></h3>
-    <form method="post" enctype="multipart/form-data" class="form-grid">
-      <?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)($edit['id'] ?? 0) ?>">
-      <div class="field"><label>Name *</label><input name="name" required value="<?= e($edit['name'] ?? '') ?>" data-slug-src></div>
-      <div class="field"><label>Slug</label><input name="slug" value="<?= e($edit['slug'] ?? '') ?>" data-slug <?= $edit ? 'data-touched="1"' : '' ?>></div>
-      <div class="field"><label>Icon</label>
-        <select name="icon"><?php foreach ($icons as $ic): ?><option value="<?= $ic ?>" <?= ($edit['icon'] ?? '') === $ic ? 'selected' : '' ?>><?= ucwords(str_replace(['fa-', '-'], ['', ' '], $ic)) ?></option><?php endforeach; ?></select>
-        <small>Icons come from Font Awesome.</small></div>
-      <div class="field"><label>Description</label><textarea name="description" style="min-height:70px"><?= e($edit['description'] ?? '') ?></textarea></div>
-      <div class="field"><label>Image (optional)</label><input type="file" name="image" accept="image/*"></div>
-      <div class="field"><label>Display order</label><input type="number" name="sort_order" value="<?= (int)($edit['sort_order'] ?? count($cats) + 1) ?>"></div>
-      <label class="check"><input type="checkbox" name="is_active" value="1" <?= ($edit['is_active'] ?? 1) ? 'checked' : '' ?>> Visible</label>
-      <button class="btn btn-primary" type="submit"><?= $edit ? 'Save changes' : 'Add category' ?></button>
-      <?php if ($edit): ?><a class="btn btn-outline" href="<?= url('admin/categories.php') ?>">Cancel</a><?php endif; ?>
-    </form>
-  </div>
-</div>
-<?php require __DIR__ . '/_footer.php'; ?>
+$edit = q('edit') ? $pdo->query('SELECT * FROM categories WHERE id = ' . (int)q('edit'))->fetch() : null;
+admin_open('Categories');
+echo ahead('Categories', 'Order controls how they appear on the home page and in filters.');
+$t = '<div class="scroll"><table class="tbl cards"><thead><tr><th>Category</th><th>Type</th><th class="r">Listed</th><th class="r">Order</th><th>Status</th><th></th></tr></thead><tbody>';
+foreach (categories(false) as $c) $t .= '<tr><td class="first"><b>' . h($c['name']) . '</b><div class="xs muted">/' . h($c['slug']) . '</div></td><td data-l="Type">' . h(KINDS[$c['kind']] ?? $c['kind']) . '</td><td data-l="Listed" class="r tab">' . pub_count($c['slug']) . '</td><td data-l="Order" class="r tab">' . (int)$c['sort_order'] . '</td><td data-l="Status">' . badge($c['active'] ? 'Visible' : 'Hidden', $c['active'] ? 'ok' : '') . '</td><td><a class="btn out sm" href="' . h(aurl('categories?edit=' . $c['id'])) . '">Edit</a></td></tr>';
+$c = csrf_field();
+$f = '<form method="post" novalidate>' . $c . '<input type="hidden" name="id" value="' . (int)($edit['id'] ?? 0) . '">' . field('Name', 'cn', inp('name', $edit['name'] ?? '', '', 'cn'), ['name' => 'name'])
+    . field('Type', 'ck', sel('kind', array_map(fn($k, $l) => [$k, $l], array_keys(KINDS), KINDS), $edit['kind'] ?? 'EQUIPMENT', '', 'ck'), ['name' => 'kind', 'hint' => 'Decides whether it appears under Heavy equipment, Spare parts or Supplies.'])
+    . field('Short description', 'cd', ta('description', $edit['description'] ?? '', 'rows="2"', 'cd'), ['name' => 'description', 'optional' => true])
+    . field('Web address', 'cs', inp('slug', $edit['slug'] ?? '', '', 'cs'), ['name' => 'slug', 'optional' => true]) . field('Order', 'co', inp('sort_order', $edit['sort_order'] ?? 99, 'type="number"', 'co'), ['name' => 'sort_order'])
+    . cb('active', (bool)($edit['active'] ?? 1), 'Visible in the store') . '<div class="row mt4"><button class="btn">' . ($edit ? 'Save category' : 'Add category') . '</button>' . ($edit ? '<a class="link" href="' . h(aurl('categories')) . '">Cancel</a>' : '') . '</div></form>'
+    . ($edit ? '<form method="post" class="mt4" data-confirm="Delete this category?">' . $c . '<input type="hidden" name="do" value="delete"><input type="hidden" name="id" value="' . (int)$edit['id'] . '"><button class="btn ghost sm" style="color:var(--danger)">Delete category</button></form>' : '');
+echo '<div class="split admin" style="align-items:start"><div>' . panel('All categories', $t . '</tbody></table></div>') . '</div><div>' . panel($edit ? 'Edit category' : 'Add a category', $f) . '</div></div>';
+admin_close();

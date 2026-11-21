@@ -1,0 +1,667 @@
+{
+ "products": [
+  {
+   "sku": "SAMPLE-PRT-001",
+   "slug": "engine-oil-filter",
+   "name": "Engine oil filter",
+   "model": null,
+   "kind": "PART",
+   "cat": "heavy-equipment-spare-parts",
+   "brand": "Generic",
+   "condition": "NEW",
+   "mode": "FIXED_PRICE",
+   "price": 2500000,
+   "stock": 40,
+   "inv": "QUANTITY",
+   "dq": false,
+   "featured": false,
+   "specs": [
+    [
+     "Part number",
+     "SP-OF-001"
+    ]
+   ],
+   "img": null,
+   "credit": null,
+   "creditUrl": null
+  },
+  {
+   "sku": "SAMPLE-IMP-001",
+   "slug": "disc-harrow-20-disc",
+   "name": "Disc harrow, 20-disc",
+   "model": null,
+   "kind": "PART",
+   "cat": "tractor-implements-attachments",
+   "brand": "Generic",
+   "condition": "NEW",
+   "mode": "FIXED_PRICE",
+   "price": 95000000,
+   "stock": 2,
+   "inv": "QUANTITY",
+   "dq": false,
+   "featured": false,
+   "specs": [
+    [
+     "Working width",
+     "2,400 mm"
+    ],
+    [
+     "Required tractor power",
+     "75 hp"
+    ]
+   ],
+   "img": null,
+   "credit": null,
+   "creditUrl": null
+  },
+  {
+   "sku": "SAMPLE-SUP-001",
+   "slug": "cement-50kg-bag",
+   "name": "Cement, 50 kg bag",
+   "model": null,
+   "kind": "SUPPLY",
+   "cat": "construction-materials-supplies",
+   "brand": "Generic",
+   "condition": "NEW",
+   "mode": "FIXED_PRICE",
+   "price": 900000,
+   "stock": 500,
+   "inv": "QUANTITY",
+   "dq": false,
+   "featured": false,
+   "specs": [
+    [
+     "Sold per",
+     "50 kg bag"
+    ],
+    [
+     "Grade / standard",
+     "42.5R"
+    ]
+   ],
+   "img": null,
+   "credit": null,
+   "creditUrl": null
+  },
+  {
+   "sku": "DEMO-EXC-312D",
+   "slug": "caterpillar-312d-crawler-excavator",
+   "name": "Caterpillar 312D crawler excavator",
+   "model": "312D",
+   "kind": "EQUIPMENT",
+   "cat": "excavators",
+   "brand": "Caterpillar",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 3900000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [
+    [
+     "Operating weight",
+     "About 12,000 kg"
+    ],
+    [
+     "Undercarriage",
+     "Steel tracks"
+    ]
+   ],
+   "img": "exc-312d",
+   "credit": "Photo: Dinkun Chen, CC BY-SA 4.0, via Wikimedia Commons. Model shown: Caterpillar 312.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:CATERPILLAR_EXCAVATOR_REGA_312.jpg"
+  },
+  {
+   "sku": "DEMO-EXC-313DL",
+   "slug": "caterpillar-313d-l-crawler-excavator",
+   "name": "Caterpillar 313D L crawler excavator",
+   "model": "313D L",
+   "kind": "EQUIPMENT",
+   "cat": "excavators",
+   "brand": "Caterpillar",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 4050000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [
+    [
+     "Operating weight",
+     "About 13,000 kg"
+    ],
+    [
+     "Undercarriage",
+     "Long track (L)"
+    ]
+   ],
+   "img": "exc-313dl",
+   "credit": "Photo: Grendelkhan, CC BY-SA 4.0, via Wikimedia Commons. Model shown: Caterpillar 325F.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Caterpillar_325_FL_excavator_on_a_job_site.jpg"
+  },
+  {
+   "sku": "DEMO-EXC-329D2L",
+   "slug": "caterpillar-329d2-l-crawler-excavator",
+   "name": "Caterpillar 329D2 L crawler excavator",
+   "model": "329D2 L",
+   "kind": "EQUIPMENT",
+   "cat": "excavators",
+   "brand": "Caterpillar",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 5175000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": true,
+   "specs": [
+    [
+     "Operating weight",
+     "About 29,000 kg"
+    ],
+    [
+     "Undercarriage",
+     "Long track (L)"
+    ]
+   ],
+   "img": "exc-329d2l",
+   "credit": "Photo: Grendelkhan, CC BY-SA 4.0, via Wikimedia Commons. Model shown: Caterpillar 328D LCR.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Caterpillar_328D_LCR_at_construction_site_in_Sunnyvale.jpg"
+  },
+  {
+   "sku": "DEMO-DOZ-D6C",
+   "slug": "caterpillar-d6c-bulldozer",
+   "name": "Caterpillar D6C bulldozer",
+   "model": "D6C",
+   "kind": "EQUIPMENT",
+   "cat": "bulldozers",
+   "brand": "Caterpillar",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 4850000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [
+    [
+     "Blade type",
+     "Confirm on enquiry"
+    ]
+   ],
+   "img": "doz-d6c",
+   "credit": "Photo: Acroterion, CC BY-SA 4.0, via Wikimedia Commons. Model shown: Caterpillar D6 (older model).",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Caterpillar_D6_bulldozer_VA1.jpg"
+  },
+  {
+   "sku": "DEMO-DOZ-D7G",
+   "slug": "caterpillar-d7g-bulldozer",
+   "name": "Caterpillar D7G bulldozer",
+   "model": "D7G",
+   "kind": "EQUIPMENT",
+   "cat": "bulldozers",
+   "brand": "Caterpillar",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 6550000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [
+    [
+     "Blade type",
+     "Confirm on enquiry"
+    ]
+   ],
+   "img": "doz-d7g",
+   "credit": "Photo: Alf van Beem, CC0, via Wikimedia Commons. Model shown: Caterpillar D7R.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Caterpillar_D7R_p1.JPG"
+  },
+  {
+   "sku": "DEMO-DOZ-D8K",
+   "slug": "caterpillar-d8k-bulldozer-with-ripper",
+   "name": "Caterpillar D8K bulldozer with ripper",
+   "model": "D8K",
+   "kind": "EQUIPMENT",
+   "cat": "bulldozers",
+   "brand": "Caterpillar",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 7500000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": true,
+   "specs": [
+    [
+     "Ripper",
+     "Fitted"
+    ]
+   ],
+   "img": "doz-d8k",
+   "credit": "Photo: Alf van Beem, CC0, via Wikimedia Commons. Model shown: Caterpillar D8R.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Caterpillar_D8R_p1.JPG"
+  },
+  {
+   "sku": "DEMO-GRD-140H",
+   "slug": "caterpillar-140h-motor-grader",
+   "name": "Caterpillar 140H motor grader",
+   "model": "140H",
+   "kind": "EQUIPMENT",
+   "cat": "motor-graders",
+   "brand": "Caterpillar",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 6750000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": true,
+   "specs": [],
+   "img": "grd-140h",
+   "credit": "Photo: Oto Zapletal, CC BY 4.0, via Wikimedia Commons. Model shown: Caterpillar 140H.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Caterpillar_140H_grader_-_01.jpg"
+  },
+  {
+   "sku": "DEMO-GRD-140G",
+   "slug": "caterpillar-140g-motor-grader",
+   "name": "Caterpillar 140G motor grader",
+   "model": "140G",
+   "kind": "EQUIPMENT",
+   "cat": "motor-graders",
+   "brand": "Caterpillar",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 7500000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [],
+   "img": "grd-140g",
+   "credit": "Photo: Grendelkhan, CC BY-SA 4.0, via Wikimedia Commons. Model shown: Caterpillar 140H.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Caterpillar_140H_grader_at_job_site_in_Campbell.jpg"
+  },
+  {
+   "sku": "DEMO-LDR-950",
+   "slug": "caterpillar-950-wheel-loader",
+   "name": "Caterpillar 950 wheel loader",
+   "model": "950",
+   "kind": "EQUIPMENT",
+   "cat": "wheel-loaders",
+   "brand": "Caterpillar",
+   "condition": "USED",
+   "mode": "QUOTE_ONLY",
+   "price": null,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [],
+   "img": "ldr-950",
+   "credit": "Photo: Oto Zapletal, CC BY-SA 4.0, via Wikimedia Commons. Model shown: Caterpillar 950 GC.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:CATERPILLAR_950_GC_Wheel_Loader_01.jpg"
+  },
+  {
+   "sku": "DEMO-BHL-416",
+   "slug": "caterpillar-416-backhoe-loader",
+   "name": "Caterpillar 416 backhoe loader",
+   "model": "416",
+   "kind": "EQUIPMENT",
+   "cat": "backhoe-loaders",
+   "brand": "Caterpillar",
+   "condition": "USED",
+   "mode": "QUOTE_ONLY",
+   "price": null,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [],
+   "img": "bhl-416",
+   "credit": "Photo: Grendelkhan, CC BY-SA 3.0, via Wikimedia Commons. Model shown: Caterpillar backhoe loader.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Caterpillar_backhoe_loader_at_construction_site_in_Sunnyvale.jpg"
+  },
+  {
+   "sku": "DEMO-TRC-MF360",
+   "slug": "massey-ferguson-mf-360-tractor",
+   "name": "Massey Ferguson MF 360 tractor",
+   "model": "MF 360",
+   "kind": "EQUIPMENT",
+   "cat": "agricultural-tractors",
+   "brand": "Massey Ferguson",
+   "condition": "NEW",
+   "mode": "FIXED_PRICE",
+   "price": 1500000000,
+   "stock": 3,
+   "inv": "QUANTITY",
+   "dq": true,
+   "featured": true,
+   "specs": [
+    [
+     "Drivetrain",
+     "2WD"
+    ]
+   ],
+   "img": "trc-mf360",
+   "credit": "Photo: Bernard Gagnon, CC BY-SA 3.0, via Wikimedia Commons. Model shown: Massey Ferguson tractor.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Massey_Ferguson_tractor,_Syria.jpg"
+  },
+  {
+   "sku": "DEMO-TRC-MF240",
+   "slug": "massey-ferguson-mf-240-tractor",
+   "name": "Massey Ferguson MF 240 tractor",
+   "model": "MF 240",
+   "kind": "EQUIPMENT",
+   "cat": "agricultural-tractors",
+   "brand": "Massey Ferguson",
+   "condition": "NEW",
+   "mode": "FIXED_PRICE",
+   "price": 1250000000,
+   "stock": 2,
+   "inv": "QUANTITY",
+   "dq": true,
+   "featured": false,
+   "specs": [
+    [
+     "Drivetrain",
+     "2WD"
+    ]
+   ],
+   "img": "trc-mf240",
+   "credit": "Photo: JoachimKohler-HB, CC BY-SA 4.0, via Wikimedia Commons. Model shown: Massey Ferguson MF 255.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Massey_Ferguson_MF_255_Traktor.jpg"
+  },
+  {
+   "sku": "DEMO-TRC-NH480S",
+   "slug": "new-holland-480s-tractor",
+   "name": "New Holland 480S tractor",
+   "model": "480S",
+   "kind": "EQUIPMENT",
+   "cat": "agricultural-tractors",
+   "brand": "New Holland",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 1150000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [],
+   "img": "trc-nh480s",
+   "credit": "Photo: ezarate, CC BY-SA 4.0, via Wikimedia Commons. Model shown: New Holland TD5.110.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:TractorNewHollandTD5.110.jpg"
+  },
+  {
+   "sku": "DEMO-TRC-MFMINI",
+   "slug": "massey-ferguson-mini-tractor",
+   "name": "Massey Ferguson mini tractor",
+   "model": null,
+   "kind": "EQUIPMENT",
+   "cat": "agricultural-tractors",
+   "brand": "Massey Ferguson",
+   "condition": "USED",
+   "mode": "FIXED_PRICE",
+   "price": 320000000,
+   "stock": 2,
+   "inv": "QUANTITY",
+   "dq": false,
+   "featured": false,
+   "specs": [],
+   "img": "trc-mfmini",
+   "credit": "Photo: JoachimKohler-HB, CC BY-SA 4.0, via Wikimedia Commons. Model shown: Massey Ferguson MF 135.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Massey_Ferguson_MF_135_in_Switzerland.jpg"
+  },
+  {
+   "sku": "DEMO-RLR-BW10AS",
+   "slug": "bomag-bw10as-tandem-asphalt-roller",
+   "name": "Bomag BW10AS tandem asphalt roller",
+   "model": "BW10AS",
+   "kind": "EQUIPMENT",
+   "cat": "road-rollers-compactors",
+   "brand": "Bomag",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 2950000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [
+    [
+     "Drum type",
+     "Double drum (tandem)"
+    ]
+   ],
+   "img": "rlr-bw10as",
+   "credit": "Photo: Cherubino, CC BY-SA 4.0, via Wikimedia Commons. Model shown: Bomag light tandem roller.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Bomag_Tandem_Roller_02.JPG"
+  },
+  {
+   "sku": "DEMO-RLR-DYNPAD",
+   "slug": "dynapac-padfoot-soil-compactor",
+   "name": "Dynapac padfoot soil compactor",
+   "model": null,
+   "kind": "EQUIPMENT",
+   "cat": "road-rollers-compactors",
+   "brand": "Dynapac",
+   "condition": "USED",
+   "mode": "HYBRID",
+   "price": 6500000000,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [
+    [
+     "Drum type",
+     "Padfoot (sheep foot)"
+    ]
+   ],
+   "img": "rlr-dynpad",
+   "credit": "Photo: Joseph Gage from Yorkville, IL, USA, CC BY-SA 2.0, via Wikimedia Commons. Model shown: Ingersoll Rand padfoot compactor.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Padfoot_compactor_(52822637378).jpg"
+  },
+  {
+   "sku": "DEMO-FLT-TOY3T",
+   "slug": "toyota-3-tonne-diesel-forklift",
+   "name": "Toyota 3-tonne diesel forklift",
+   "model": null,
+   "kind": "EQUIPMENT",
+   "cat": "forklifts-material-handling",
+   "brand": "Toyota",
+   "condition": "USED",
+   "mode": "QUOTE_ONLY",
+   "price": null,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": false,
+   "featured": false,
+   "specs": [
+    [
+     "Lift capacity",
+     "3,000 kg"
+    ],
+    [
+     "Power source",
+     "Diesel"
+    ]
+   ],
+   "img": "flt-toy3t",
+   "credit": "Photo: Leon Brooks, Public domain, via Wikimedia Commons. Model shown: Toyota forklift.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:Toyota_forklift_vehicle.jpg"
+  },
+  {
+   "sku": "DEMO-TRK-HOWO",
+   "slug": "sinotruk-howo-6x4-tipper-truck",
+   "name": "Sinotruk HOWO 6x4 tipper truck",
+   "model": null,
+   "kind": "EQUIPMENT",
+   "cat": "dump-trucks-commercial-vehicles",
+   "brand": "Sinotruk HOWO",
+   "condition": "USED",
+   "mode": "QUOTE_ONLY",
+   "price": null,
+   "stock": 1,
+   "inv": "UNIQUE_UNIT",
+   "dq": true,
+   "featured": false,
+   "specs": [
+    [
+     "Axle configuration",
+     "6x4"
+    ]
+   ],
+   "img": "trk-howo",
+   "credit": "Photo: Shadman Samee from Dhaka, Bangladesh, CC BY-SA 2.0, via Wikimedia Commons. Model shown: Sinotruk HOWO tipper.",
+   "creditUrl": "https://commons.wikimedia.org/wiki/File:DT-138_Sinotruk_Howo_336_tipper_(25632762032).jpg"
+  },
+  {
+   "sku": "DEMO-GEN-PK100",
+   "slug": "perkins-100-kva-soundproof-diesel-generator",
+   "name": "Perkins 100 kVA soundproof diesel generator",
+   "model": null,
+   "kind": "EQUIPMENT",
+   "cat": "generators-industrial-equipment",
+   "brand": "Perkins",
+   "condition": "NEW",
+   "mode": "FIXED_PRICE",
+   "price": 700000000,
+   "stock": 4,
+   "inv": "QUANTITY",
+   "dq": false,
+   "featured": false,
+   "specs": [
+    [
+     "Prime power",
+     "100 kVA"
+    ],
+    [
+     "Enclosure",
+     "Soundproof canopy"
+    ]
+   ],
+   "img": null,
+   "credit": null,
+   "creditUrl": null
+  },
+  {
+   "sku": "DEMO-GEN-PK200",
+   "slug": "perkins-200-kva-soundproof-diesel-generator",
+   "name": "Perkins 200 kVA soundproof diesel generator",
+   "model": null,
+   "kind": "EQUIPMENT",
+   "cat": "generators-industrial-equipment",
+   "brand": "Perkins",
+   "condition": "NEW",
+   "mode": "FIXED_PRICE",
+   "price": 1450000000,
+   "stock": 2,
+   "inv": "QUANTITY",
+   "dq": true,
+   "featured": false,
+   "specs": [
+    [
+     "Prime power",
+     "200 kVA"
+    ],
+    [
+     "Enclosure",
+     "Soundproof canopy"
+    ]
+   ],
+   "img": null,
+   "credit": null,
+   "creditUrl": null
+  }
+ ],
+ "categories": [
+  {
+   "slug": "agricultural-tractors",
+   "name": "Agricultural tractors",
+   "kind": "EQUIPMENT",
+   "desc": "Two- and four-wheel-drive tractors for farming and haulage."
+  },
+  {
+   "slug": "caterpillar-machinery",
+   "name": "Caterpillar machinery",
+   "kind": "EQUIPMENT",
+   "desc": "Machines manufactured by Caterpillar across all equipment types."
+  },
+  {
+   "slug": "excavators",
+   "name": "Excavators",
+   "kind": "EQUIPMENT",
+   "desc": "Crawler and wheeled excavators for digging, trenching and demolition."
+  },
+  {
+   "slug": "bulldozers",
+   "name": "Bulldozers",
+   "kind": "EQUIPMENT",
+   "desc": "Track-type tractors for pushing, grading and land clearing."
+  },
+  {
+   "slug": "wheel-loaders",
+   "name": "Wheel loaders",
+   "kind": "EQUIPMENT",
+   "desc": "Loaders for material handling, stockpiling and truck loading."
+  },
+  {
+   "slug": "motor-graders",
+   "name": "Motor graders",
+   "kind": "EQUIPMENT",
+   "desc": "Graders for road construction and maintenance."
+  },
+  {
+   "slug": "backhoe-loaders",
+   "name": "Backhoe loaders",
+   "kind": "EQUIPMENT",
+   "desc": "Combined loader and backhoe for site work."
+  },
+  {
+   "slug": "road-rollers-compactors",
+   "name": "Road rollers and compactors",
+   "kind": "EQUIPMENT",
+   "desc": "Single- and double-drum rollers and compaction equipment."
+  },
+  {
+   "slug": "forklifts-material-handling",
+   "name": "Forklifts and material handling",
+   "kind": "EQUIPMENT",
+   "desc": "Forklifts, telehandlers and warehouse handling equipment."
+  },
+  {
+   "slug": "dump-trucks-commercial-vehicles",
+   "name": "Dump trucks and commercial vehicles",
+   "kind": "EQUIPMENT",
+   "desc": "Tippers, haulers and commercial vehicles."
+  },
+  {
+   "slug": "generators-industrial-equipment",
+   "name": "Generators and industrial equipment",
+   "kind": "EQUIPMENT",
+   "desc": "Diesel generators, compressors and industrial plant."
+  },
+  {
+   "slug": "tractor-implements-attachments",
+   "name": "Tractor implements and attachments",
+   "kind": "PART",
+   "desc": "Ploughs, harrows, planters, trailers and other attachments."
+  },
+  {
+   "slug": "heavy-equipment-spare-parts",
+   "name": "Heavy equipment spare parts",
+   "kind": "PART",
+   "desc": "Filters, undercarriage, hydraulics, engine and electrical parts."
+  },
+  {
+   "slug": "construction-materials-supplies",
+   "name": "Construction materials and general supplies",
+   "kind": "SUPPLY",
+   "desc": "Building materials, consumables and general commercial supplies."
+  }
+ ]
+}

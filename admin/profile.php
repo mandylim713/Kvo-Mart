@@ -1,41 +1,21 @@
 <?php
-require __DIR__ . '/_init.php';
-$me = require_admin();
-
+$me = current_staff();
 if (is_post()) {
-    csrf_check();
-    $name = post('name') ?: $me['name'];
-    $email = strtolower(post('email'));
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { flash('error', 'Enter a valid email.'); redirect('admin/profile.php'); }
-    $dup = db()->prepare('SELECT COUNT(*) FROM admins WHERE email = ? AND id != ?');
-    $dup->execute([$email, $me['id']]);
-    if ($dup->fetchColumn()) { flash('error', 'That email is used by another admin.'); redirect('admin/profile.php'); }
-    db()->prepare('UPDATE admins SET name = ?, email = ? WHERE id = ?')->execute([$name, $email, $me['id']]);
-    if (post('new') !== '') {
-        if (!password_verify(post('current'), $me['password'])) { flash('error', 'Current password is incorrect.'); redirect('admin/profile.php'); }
-        if (strlen(post('new')) < 8) { flash('error', 'New password must be at least 8 characters.'); redirect('admin/profile.php'); }
-        if (post('new') !== post('new2')) { flash('error', 'New passwords do not match.'); redirect('admin/profile.php'); }
-        db()->prepare('UPDATE admins SET password = ? WHERE id = ?')->execute([password_hash(post('new'), PASSWORD_DEFAULT), $me['id']]);
-        flash('success', 'Password changed.');
-    }
-    flash('success', 'Profile saved.');
-    redirect('admin/profile.php');
+    require_csrf();
+    if (!password_verify((string)post('old'), $me['password'])) fail(['old' => 'Current password is incorrect.'], '/admin/profile');
+    if (!pw_ok((string)post('password'))) fail(['password' => PW_RULE], '/admin/profile');
+    if (post('password') !== post('password2')) fail(['password2' => "Passwords don't match."], '/admin/profile');
+    if (post('password') === 'KvoAdmin2026') fail(['password' => 'Choose a new password, not the starting one.'], '/admin/profile');
+    db()->prepare('UPDATE staff SET password = ? WHERE id = ?')->execute([password_hash((string)post('password'), PASSWORD_DEFAULT), $me['id']]);
+    audit('staff.password_changed', $me['email']);
+    flash('Password changed.');
+    redirect('/admin');
 }
-
-$adminTitle = 'My profile';
-require __DIR__ . '/_header.php';
-?>
-<div class="card" style="max-width:560px">
-  <form method="post" class="form-grid">
-    <?= csrf_field() ?>
-    <div class="field"><label>Name</label><input name="name" value="<?= e($me['name']) ?>" required></div>
-    <div class="field"><label>Login email</label><input type="email" name="email" value="<?= e($me['email']) ?>" required></div>
-    <hr style="border:0;border-top:1px solid var(--line);width:100%">
-    <h3 style="margin:0">Change password</h3>
-    <div class="field"><label>Current password</label><input type="password" name="current" autocomplete="current-password"></div>
-    <div class="field"><label>New password</label><input type="password" name="new" minlength="8" autocomplete="new-password"><small>At least 8 characters. Leave blank to keep the current one.</small></div>
-    <div class="field"><label>Confirm new password</label><input type="password" name="new2" autocomplete="new-password"></div>
-    <button class="btn btn-primary" type="submit">Save</button>
-  </form>
-</div>
-<?php require __DIR__ . '/_footer.php'; ?>
+admin_open('My password');
+echo ahead('My password', h($me['name']) . ' · ' . h($me['email']));
+echo panel('Change password', '<form method="post" style="max-width:28rem" novalidate>' . csrf_field()
+    . field('Current password', 'c-old', '<input class="in' . bad('old') . '" id="c-old" name="old" type="password" autocomplete="current-password">', ['name' => 'old'])
+    . field('New password', 'c-new', '<input class="in' . bad('password') . '" id="c-new" name="password" type="password" autocomplete="new-password">', ['hint' => PW_RULE, 'name' => 'password'])
+    . field('Confirm new password', 'c-new2', '<input class="in' . bad('password2') . '" id="c-new2" name="password2" type="password" autocomplete="new-password">', ['name' => 'password2'])
+    . '<button class="btn">Change password</button></form>');
+admin_close();

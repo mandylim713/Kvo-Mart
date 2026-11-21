@@ -1,132 +1,89 @@
 <?php
-require __DIR__ . '/_init.php';
-require_admin('admin');
-
-$tabs = [
-    'general'  => ['General', 'fa-store'],
-    'branding' => ['Branding', 'fa-palette'],
-    'contact'  => ['Contact & social', 'fa-address-book'],
-    'payments' => ['Payments', 'fa-credit-card'],
-    'delivery' => ['Delivery', 'fa-truck'],
-    'emails'   => ['Emails', 'fa-envelope'],
-];
-$tab = isset($tabs[get('tab')]) ? get('tab') : 'general';
-
-$fields = [
-    'general'  => ['site_name', 'company_name', 'tagline', 'meta_description', 'about_short', 'topbar_text', 'min_order'],
-    'branding' => ['color_primary', 'color_accent', 'show_powered_by'],
-    'contact'  => ['phone', 'phone2', 'whatsapp', 'email', 'address', 'opening_hours', 'map_embed', 'facebook', 'instagram', 'twitter', 'tiktok'],
-    'payments' => ['pay_flutterwave', 'flw_public_key', 'flw_secret_key', 'flw_hash', 'pay_transfer', 'bank_name', 'bank_account_name', 'bank_account_no', 'pay_pod', 'pay_whatsapp'],
-    'delivery' => ['free_delivery_min', 'pickup_enabled', 'pickup_address'],
-    'emails'   => ['send_emails', 'notify_email'],
-];
-$checkboxes = ['show_powered_by', 'pay_flutterwave', 'pay_transfer', 'pay_pod', 'pay_whatsapp', 'pickup_enabled', 'send_emails'];
-$secrets = ['flw_secret_key', 'flw_hash'];
-
+$tabs = ['business' => 'Business', 'payments' => 'Payments', 'checkout' => 'Checkout & tax', 'emails' => 'Emails', 'branding' => 'Branding'];
+$tab = isset($tabs[q('tab')]) ? q('tab') : 'business';
 if (is_post()) {
-    csrf_check();
-    foreach ($fields[$tab] as $f) {
-        if (in_array($f, $checkboxes, true)) { save_setting($f, post($f) ? '1' : '0'); continue; }
-        $val = (string)post($f);
-        if (in_array($f, $secrets, true) && $val === '') continue; // keep existing secret
-        if (in_array($f, ['color_primary', 'color_accent'], true) && !preg_match('/^#[0-9a-f]{6}$/i', $val)) continue;
-        if ($f === 'whatsapp') $val = preg_replace('/\D+/', '', $val);
-        if ($f === 'map_embed' && preg_match('/src="([^"]+)"/', $val, $m)) $val = $m[1]; // allow pasting full iframe
-        if (in_array($f, ['min_order', 'free_delivery_min'], true)) $val = (string)max(0, (int)$val);
-        save_setting($f, trim($val));
+    require_csrf();
+    $t = post('tab'); $back = '/admin/settings?tab=' . $t; $e = [];
+    if ($t === 'business') {
+        if (post('email') !== '' && !email_ok(post('email'))) $e['email'] = 'Enter a valid email or leave blank.';
+        if ($e) fail($e, $back);
+        foreach (['business_name', 'short_name', 'tagline', 'phone', 'email', 'address', 'hours', 'announcement', 'meta_description', 'facebook', 'instagram', 'linkedin', 'x'] as $k) save_setting($k, mb_substr(post($k), 0, 1000));
+        save_setting('whatsapp', preg_replace('/[^\d+]/', '', post('whatsapp')));
+    } elseif ($t === 'payments') {
+        foreach (['paystack', 'flutterwave'] as $pv) {
+            save_setting($pv . '_enabled', post($pv . '_enabled') ? '1' : '0');
+            save_setting($pv . '_public', trim(post($pv . '_public')));
+            if (post($pv . '_secret') !== '') save_setting($pv . '_secret', trim(post($pv . '_secret')));
+            if (post($pv . '_clear')) save_setting($pv . '_secret', '');
+        }
+        if (post('flutterwave_hash') !== '') save_setting('flutterwave_hash', trim(post('flutterwave_hash')));
+        save_setting('bank_transfer_enabled', post('bank_transfer_enabled') ? '1' : '0');
+        save_setting('bank_instructions', mb_substr(post('bank_instructions'), 0, 2000));
+        foreach (['paystack' => 'sk_', 'flutterwave' => 'FLWSECK'] as $pv => $pre) if (setting($pv . '_secret') && !str_starts_with(setting($pv . '_secret'), $pre)) flash(ucfirst($pv) . ' secret key looks unusual — check you pasted the secret (not public) key.', 'warn');
+        if (setting('paystack_enabled') === '1' && !setting('paystack_secret')) flash('Paystack is switched on but has no secret key, so it stays hidden at checkout.', 'warn');
+        if (setting('flutterwave_enabled') === '1' && !setting('flutterwave_secret')) flash('Flutterwave is switched on but has no secret key, so it stays hidden at checkout.', 'warn');
+        audit('settings.payments', 'settings');
+    } elseif ($t === 'checkout') {
+        $tax = (float)post('tax'); if ($tax < 0 || $tax > 50) $e['tax'] = 'Enter a rate between 0 and 50.';
+        if ((int)post('card_hold_min') < 10) $e['card_hold_min'] = 'At least 10 minutes.';
+        if ((int)post('transfer_hold_hours') < 1) $e['transfer_hold_hours'] = 'At least 1 hour.';
+        if ($e) fail($e, $back);
+        save_setting('tax_bps', (string)(int)round($tax * 100)); save_setting('tax_label', post('tax_label') ?: 'VAT');
+        save_setting('prices_include_tax', post('prices_include_tax') ? '1' : '0');
+        save_setting('pickup_enabled', post('pickup_enabled') ? '1' : '0'); save_setting('pickup_note', mb_substr(post('pickup_note'), 0, 500));
+        save_setting('card_hold_min', (string)(int)post('card_hold_min')); save_setting('transfer_hold_hours', (string)(int)post('transfer_hold_hours'));
+    } elseif ($t === 'emails') {
+        foreach (['admin_email', 'mail_from'] as $k) if (post($k) !== '' && !email_ok(post($k))) $e[$k] = 'Enter a valid email or leave blank.';
+        if ($e) fail($e, $back);
+        save_setting('admin_email', strtolower(post('admin_email'))); save_setting('mail_from', strtolower(post('mail_from'))); save_setting('send_emails', post('send_emails') ? '1' : '0');
+        if (post('test')) { $to = admin_email(); if ($to) { send_email($to, 'Test email from your store', 'If you can read this, order and enquiry emails will reach you.'); flash('Test email sent to ' . $to . '. Check the inbox and spam folder; the Email log shows whether the server accepted it.'); } }
+    } elseif ($t === 'branding') {
+        try { if ($logo = upload_image($_FILES['logo'] ?? null, 'branding', 800)) { if (str_starts_with(setting('logo'), 'uploads/')) delete_upload(setting('logo')); save_setting('logo', $logo); } } catch (RuntimeException $ex) { fail(['logo' => $ex->getMessage()], $back); }
+        if (post('reset_logo')) save_setting('logo', 'assets/img/logo.jpg');
+        save_setting('show_credit', post('show_credit') ? '1' : '0');
     }
-    if ($tab === 'branding') {
-        if ($logo = upload_image($_FILES['logo'] ?? [], 'branding', 600)) { delete_upload(setting('logo')); save_setting('logo', $logo); }
-        if (post('remove_logo')) { delete_upload(setting('logo')); save_setting('logo', ''); }
-        if ($fav = upload_image($_FILES['favicon'] ?? [], 'branding', 256)) { delete_upload(setting('favicon')); save_setting('favicon', $fav); }
-    }
-    if ($tab === 'payments' && post('pay_flutterwave') && (!post('flw_public_key') || (setting('flw_secret_key') === '' && !post('flw_secret_key')))) {
-        flash('warning', 'Flutterwave is switched on but keys are missing, so it will stay hidden at checkout until you add both keys.');
-    }
-    flash('success', 'Settings saved.');
-    redirect('admin/settings.php?tab=' . $tab);
+    audit('settings.updated', $t);
+    flash('Settings saved.');
+    redirect($back);
 }
-
-$s = fn($k) => e(setting($k));
-$chk = fn($k) => setting($k) === '1' ? 'checked' : '';
-$adminTitle = 'Settings';
-require __DIR__ . '/_header.php';
-?>
-<div class="tabs-nav"><?php foreach ($tabs as $k => [$l, $i]): ?><a href="?tab=<?= $k ?>" class="<?= $tab === $k ? 'active' : '' ?>"><i class="fa-solid <?= $i ?>"></i> <?= $l ?></a><?php endforeach; ?></div>
-
-<form method="post" enctype="multipart/form-data" class="card" style="max-width:860px">
-  <?= csrf_field() ?>
-  <?php if ($tab === 'general'): ?>
-    <div class="form-grid two">
-      <div class="field"><label>Store name (short)</label><input name="site_name" value="<?= $s('site_name') ?>" required></div>
-      <div class="field"><label>Registered company name</label><input name="company_name" value="<?= $s('company_name') ?>"></div>
-      <div class="field full"><label>Tagline</label><input name="tagline" value="<?= $s('tagline') ?>"></div>
-      <div class="field full"><label>SEO description</label><textarea name="meta_description" style="min-height:70px" maxlength="300"><?= $s('meta_description') ?></textarea><small>Shown on Google and when links are shared (keep under 160 characters).</small></div>
-      <div class="field full"><label>Footer "about" text</label><textarea name="about_short" style="min-height:80px"><?= $s('about_short') ?></textarea></div>
-      <div class="field full"><label>Top announcement bar</label><input name="topbar_text" value="<?= $s('topbar_text') ?>"><small>Leave empty to hide the bar.</small></div>
-      <div class="field"><label>Minimum order amount (<?= e(setting('currency')) ?>)</label><input type="number" name="min_order" min="0" value="<?= $s('min_order') ?>"><small>0 = no minimum.</small></div>
-    </div>
-  <?php elseif ($tab === 'branding'): ?>
-    <div class="form-grid two">
-      <div class="field"><label>Logo</label>
-        <?php if (setting('logo')): ?><img src="<?= e(asset(setting('logo'))) ?>" alt="" style="max-height:60px;margin-bottom:8px;background:#f8fafc;padding:6px;border-radius:8px"><label class="check" style="font-weight:500"><input type="checkbox" name="remove_logo" value="1"> Remove logo</label><?php endif; ?>
-        <input type="file" name="logo" accept="image/*"><small>Transparent PNG, roughly 400×120. Without a logo the store name is shown.</small></div>
-      <div class="field"><label>Favicon (browser tab icon)</label>
-        <?php if (setting('favicon')): ?><img src="<?= e(asset(setting('favicon'))) ?>" alt="" style="width:40px;height:40px;margin-bottom:8px"><?php endif; ?>
-        <input type="file" name="favicon" accept="image/png,image/jpeg,image/webp"><small>Square PNG, 256×256.</small></div>
-      <div class="field"><label>Primary colour</label><div class="color-row"><input type="color" value="<?= $s('color_primary') ?>" oninput="this.nextElementSibling.value=this.value"><input name="color_primary" value="<?= $s('color_primary') ?>" pattern="#[0-9a-fA-F]{6}"></div><small>Buttons, links, header accents.</small></div>
-      <div class="field"><label>Accent colour</label><div class="color-row"><input type="color" value="<?= $s('color_accent') ?>" oninput="this.nextElementSibling.value=this.value"><input name="color_accent" value="<?= $s('color_accent') ?>" pattern="#[0-9a-fA-F]{6}"></div><small>Highlights, "Buy now", badges.</small></div>
-      <label class="check full"><input type="checkbox" name="show_powered_by" value="1" <?= $chk('show_powered_by') ?>> Show "Powered by DWO" in footer</label>
-    </div>
-  <?php elseif ($tab === 'contact'): ?>
-    <div class="form-grid two">
-      <div class="field"><label>Phone</label><input name="phone" value="<?= $s('phone') ?>"></div>
-      <div class="field"><label>Second phone</label><input name="phone2" value="<?= $s('phone2') ?>"></div>
-      <div class="field"><label>WhatsApp number</label><input name="whatsapp" value="<?= $s('whatsapp') ?>" placeholder="2348012345678"><small>International format without + (e.g. 2348012345678). Orders and chat buttons use this.</small></div>
-      <div class="field"><label>Email</label><input type="email" name="email" value="<?= $s('email') ?>"></div>
-      <div class="field full"><label>Store address</label><input name="address" value="<?= $s('address') ?>"></div>
-      <div class="field full"><label>Opening hours</label><input name="opening_hours" value="<?= $s('opening_hours') ?>"></div>
-      <div class="field full"><label>Google Maps embed</label><input name="map_embed" value="<?= $s('map_embed') ?>" placeholder="Paste the embed code or URL from Google Maps → Share → Embed a map"></div>
-      <div class="field"><label>Facebook URL</label><input name="facebook" value="<?= $s('facebook') ?>"></div>
-      <div class="field"><label>Instagram URL</label><input name="instagram" value="<?= $s('instagram') ?>"></div>
-      <div class="field"><label>X / Twitter URL</label><input name="twitter" value="<?= $s('twitter') ?>"></div>
-      <div class="field"><label>TikTok URL</label><input name="tiktok" value="<?= $s('tiktok') ?>"></div>
-    </div>
-  <?php elseif ($tab === 'payments'): ?>
-    <h3>Flutterwave (card, bank transfer, USSD)</h3>
-    <div class="form-grid two">
-      <label class="check full"><input type="checkbox" name="pay_flutterwave" value="1" <?= $chk('pay_flutterwave') ?>> Accept online payments with Flutterwave</label>
-      <div class="field full"><label>Public key</label><input name="flw_public_key" value="<?= $s('flw_public_key') ?>" placeholder="FLWPUBK-..."></div>
-      <div class="field"><label>Secret key</label><input type="password" name="flw_secret_key" placeholder="<?= setting('flw_secret_key') ? '•••••••• saved — leave blank to keep' : 'FLWSECK-...' ?>" autocomplete="off"></div>
-      <div class="field"><label>Webhook secret hash</label><input type="password" name="flw_hash" placeholder="<?= setting('flw_hash') ? '•••••••• saved' : 'Any long random text' ?>" autocomplete="off"></div>
-      <div class="field full"><small>Get keys at Flutterwave dashboard → Settings → API keys. Webhook URL: <strong><?= e(full_url('pay/webhook.php')) ?></strong> (paste the same secret hash there).</small></div>
-    </div>
-    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
-    <h3>Bank transfer</h3>
-    <div class="form-grid two">
-      <label class="check full"><input type="checkbox" name="pay_transfer" value="1" <?= $chk('pay_transfer') ?>> Accept bank transfer</label>
-      <div class="field"><label>Bank name</label><input name="bank_name" value="<?= $s('bank_name') ?>"></div>
-      <div class="field"><label>Account number</label><input name="bank_account_no" value="<?= $s('bank_account_no') ?>" inputmode="numeric"></div>
-      <div class="field full"><label>Account name</label><input name="bank_account_name" value="<?= $s('bank_account_name') ?>"></div>
-    </div>
-    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
-    <h3>Other options</h3>
-    <label class="check"><input type="checkbox" name="pay_pod" value="1" <?= $chk('pay_pod') ?>> Pay on delivery</label>
-    <label class="check"><input type="checkbox" name="pay_whatsapp" value="1" <?= $chk('pay_whatsapp') ?>> Order via WhatsApp</label>
-  <?php elseif ($tab === 'delivery'): ?>
-    <div class="form-grid">
-      <div class="field"><label>Free delivery for orders above (<?= e(setting('currency')) ?>)</label><input type="number" name="free_delivery_min" min="0" value="<?= $s('free_delivery_min') ?>"><small>0 = never free. Mention it in the top bar if you use it.</small></div>
-      <label class="check"><input type="checkbox" name="pickup_enabled" value="1" <?= $chk('pickup_enabled') ?>> Offer free store pickup</label>
-      <div class="field"><label>Pickup instructions</label><input name="pickup_address" value="<?= $s('pickup_address') ?>"></div>
-      <a class="btn btn-outline" href="<?= url('admin/zones.php') ?>"><i class="fa-solid fa-truck"></i> Manage delivery zones &amp; fees</a>
-    </div>
-  <?php elseif ($tab === 'emails'): ?>
-    <div class="form-grid">
-      <label class="check"><input type="checkbox" name="send_emails" value="1" <?= $chk('send_emails') ?>> Send email notifications (new orders, status updates, contact messages)</label>
-      <div class="field"><label>Send admin notifications to</label><input type="email" name="notify_email" value="<?= $s('notify_email') ?>"></div>
-      <small class="muted">Uses your hosting's mail function. For best delivery, set the store email (Contact tab) to an address on your own domain created in cPanel → Email Accounts.</small>
-    </div>
-  <?php endif; ?>
-  <div style="margin-top:18px"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Save settings</button></div>
-</form>
-<?php require __DIR__ . '/_footer.php'; ?>
+$s = fn($k) => setting($k);
+admin_open('Settings');
+echo ahead('Settings', 'Contact details stay blank until you add them — nothing is made up on the website.');
+echo '<div class="chip-row" style="margin-bottom:1rem">'; foreach ($tabs as $k => $l) echo '<a class="chip' . ($tab === $k ? ' on' : '') . '" href="' . h(aurl('settings?tab=' . $k)) . '">' . $l . '</a>'; echo '</div>';
+$c = csrf_field() . '<input type="hidden" name="tab" value="' . $tab . '">';
+$secretNote = fn($k) => setting($k) ? '•••• saved — leave blank to keep' : 'Not set';
+if ($tab === 'business') {
+    echo '<form method="post" novalidate>' . $c . panel('Business details', '<div class="grid g2" style="gap:0 1rem">'
+        . field('Registered name', 's1', inp('business_name', $s('business_name'), '', 's1'), ['name' => 'business_name']) . field('Short name (logo text)', 's2', inp('short_name', $s('short_name'), '', 's2'), ['name' => 'short_name'])
+        . field('Tagline', 's3', inp('tagline', $s('tagline'), '', 's3'), ['name' => 'tagline']) . field('Phone', 's4', inp('phone', $s('phone'), 'type="tel"', 's4'), ['name' => 'phone'])
+        . field('Email', 's5', inp('email', $s('email'), 'type="email"', 's5'), ['name' => 'email']) . field('WhatsApp number', 's6', inp('whatsapp', $s('whatsapp'), 'placeholder="0803 000 0000 or 234803…"', 's6'), ['name' => 'whatsapp', 'hint' => 'Turns on the WhatsApp buttons across the site.'])
+        . field('Opening hours', 's7', inp('hours', $s('hours'), 'placeholder="Mon–Sat, 8am–6pm"', 's7'), ['name' => 'hours']) . field('Address', 's8', inp('address', $s('address'), '', 's8'), ['name' => 'address']) . '</div>'
+        . field('Announcement bar', 's9', inp('announcement', $s('announcement'), 'placeholder="Blank hides the bar"', 's9'), ['name' => 'announcement', 'optional' => true])
+        . field('Search engine description', 's10', ta('meta_description', $s('meta_description'), 'rows="2" maxlength="300"', 's10'), ['name' => 'meta_description', 'hint' => 'Shown on Google and when links are shared. About 155 characters.']))
+        . panel('Social media links', '<div class="grid g2" style="gap:0 1rem">' . field('Facebook', 'sf', inp('facebook', $s('facebook'), 'type="url" placeholder="https://…"', 'sf'), ['optional' => true, 'name' => 'facebook']) . field('Instagram', 'si', inp('instagram', $s('instagram'), 'type="url"', 'si'), ['optional' => true, 'name' => 'instagram']) . field('LinkedIn', 'sl', inp('linkedin', $s('linkedin'), 'type="url"', 'sl'), ['optional' => true, 'name' => 'linkedin']) . field('X (Twitter)', 'sx', inp('x', $s('x'), 'type="url"', 'sx'), ['optional' => true, 'name' => 'x']) . '</div>')
+        . '<button class="btn">Save</button></form>';
+} elseif ($tab === 'payments') {
+    $hook = fn($p) => '<p class="xs muted">Webhook URL: <code style="word-break:break-all">' . h(full_url('/pay/webhook/' . $p)) . '</code></p>';
+    echo '<form method="post" autocomplete="off" novalidate>' . $c
+        . panel('Paystack', cb('paystack_enabled', $s('paystack_enabled') === '1', 'Offer Paystack at checkout') . '<div class="grid g2 mt3" style="gap:0 1rem">' . field('Public key', 'pk1', inp('paystack_public', $s('paystack_public'), 'placeholder="pk_live_…"', 'pk1'), ['name' => 'paystack_public']) . field('Secret key', 'sk1', '<input class="in" id="sk1" name="paystack_secret" type="password" placeholder="' . h($secretNote('paystack_secret')) . '" autocomplete="new-password">', ['hint' => 'From Paystack → Settings → API keys & webhooks.']) . '</div>'
+            . ($s('paystack_secret') ? cb('paystack_clear', false, 'Remove the saved secret key') : '') . $hook('paystack') . '<p class="xs muted mt1">Paste the webhook URL into Paystack so payments confirm even if the customer closes the page.</p>')
+        . panel('Flutterwave', cb('flutterwave_enabled', $s('flutterwave_enabled') === '1', 'Offer Flutterwave at checkout') . '<div class="grid g2 mt3" style="gap:0 1rem">' . field('Public key', 'pk2', inp('flutterwave_public', $s('flutterwave_public'), 'placeholder="FLWPUBK-…"', 'pk2'), ['name' => 'flutterwave_public']) . field('Secret key', 'sk2', '<input class="in" id="sk2" name="flutterwave_secret" type="password" placeholder="' . h($secretNote('flutterwave_secret')) . '" autocomplete="new-password">')
+            . field('Webhook secret hash', 'fh', '<input class="in" id="fh" name="flutterwave_hash" type="password" placeholder="' . h($secretNote('flutterwave_hash')) . '" autocomplete="new-password">', ['hint' => 'Any long random text — paste the same value in Flutterwave → Settings → Webhooks.']) . '</div>'
+            . ($s('flutterwave_secret') ? cb('flutterwave_clear', false, 'Remove the saved secret key') : '') . $hook('flutterwave'))
+        . panel('Bank transfer', cb('bank_transfer_enabled', $s('bank_transfer_enabled') === '1', 'Offer bank transfer at checkout') . '<div class="mt3">' . field('Transfer instructions shown to the customer', 'bi', ta('bank_instructions', $s('bank_instructions'), 'rows="5"', 'bi'), ['name' => 'bank_instructions', 'hint' => 'Bank, account name and number. The customer also sees the amount and a payment reference.']) . '</div>')
+        . '<button class="btn">Save payment settings</button></form>';
+} elseif ($tab === 'checkout') {
+    echo '<form method="post" novalidate>' . $c . panel('Tax', '<div class="grid g2" style="gap:0 1rem">' . field('Tax rate (%)', 't1', inp('tax', (int)$s('tax_bps') / 100, 'inputmode="decimal"', 't1'), ['name' => 'tax', 'hint' => '0 hides tax everywhere. Nigeria VAT is 7.5% if you charge it.']) . field('Tax label', 't2', inp('tax_label', $s('tax_label'), '', 't2'), ['name' => 'tax_label']) . '</div>' . cb('prices_include_tax', $s('prices_include_tax') === '1', 'Listed prices already include tax'))
+        . panel('Collection', cb('pickup_enabled', $s('pickup_enabled') === '1', 'Customers can choose to collect from KVO Mart') . '<div class="mt3">' . field('Collection note', 't3', inp('pickup_note', $s('pickup_note'), '', 't3'), ['name' => 'pickup_note']) . '</div><p class="sm"><a class="link" href="' . h(aurl('zones')) . '">Delivery zones and fees →</a></p>')
+        . panel('Stock holds', '<p class="sm muted" style="margin-bottom:1rem">Stock is reserved while an order waits for payment, then released automatically.</p><div class="grid g2" style="gap:0 1rem">' . field('Card / online payment hold (minutes)', 't4', inp('card_hold_min', $s('card_hold_min'), 'type="number" min="10"', 't4'), ['name' => 'card_hold_min']) . field('Bank transfer hold (hours)', 't5', inp('transfer_hold_hours', $s('transfer_hold_hours'), 'type="number" min="1"', 't5'), ['name' => 'transfer_hold_hours', 'hint' => 'Orders where the customer reported a transfer are never cancelled automatically.']) . '</div>')
+        . '<button class="btn">Save</button></form>';
+} elseif ($tab === 'emails') {
+    echo '<form method="post" novalidate>' . $c . panel('Email notifications', cb('send_emails', $s('send_emails') === '1', 'Send emails (order confirmations, payment receipts, delivery updates, quotations)')
+        . '<div class="grid g2 mt3" style="gap:0 1rem">' . field('Send staff notifications to', 'e1', inp('admin_email', $s('admin_email'), 'type="email" placeholder="sales@yourdomain.com"', 'e1'), ['name' => 'admin_email', 'hint' => 'New orders, transfers to verify and enquiries. Uses the business email if blank.'])
+        . field('Send from', 'e2', inp('mail_from', $s('mail_from'), 'type="email" placeholder="no-reply@yourdomain.com"', 'e2'), ['name' => 'mail_from', 'hint' => 'Use an address on your own domain (create it in cPanel → Email Accounts) so emails don’t land in spam.']) . '</div>'
+        . '<div class="row"><button class="btn">Save</button><button class="btn out" name="test" value="1">Save and send a test email</button></div>') . '</form>';
+} else {
+    echo '<form method="post" enctype="multipart/form-data" novalidate>' . $c . panel('Logo', '<img src="' . h(asset(setting('logo'))) . '" alt="" style="height:80px;margin-bottom:1rem;border:1px solid var(--steel);padding:4px;background:#fff">' . field('Upload a new logo', 'bl', '<input class="in" id="bl" type="file" name="logo" accept="image/*">', ['name' => 'logo', 'hint' => 'PNG or JPG, wider than tall works best.'])
+        . (str_starts_with(setting('logo'), 'uploads/') ? cb('reset_logo', false, 'Go back to the original KVO logo') : '')) . panel('Footer', cb('show_credit', $s('show_credit') === '1', 'Show “Powered by DWO” in the footer')) . '<button class="btn">Save</button></form>';
+}
+admin_close();

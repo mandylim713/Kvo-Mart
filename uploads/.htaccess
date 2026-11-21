@@ -1,6 +1,7 @@
-# never execute scripts inside uploads
-<FilesMatch "\.(php|phtml|php\d|phar|pl|py|cgi|sh|asp|aspx|jsp)$">
+Options -Indexes
+<FilesMatch "\.(php|phtml|php\d|phar|pl|py|cgi|sh|asp|aspx|jsp|html?|svg)$">
   Require all denied
 </FilesMatch>
-Options -Indexes
-php_flag engine off
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>

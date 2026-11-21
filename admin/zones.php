@@ -1,64 +1,36 @@
 <?php
-require __DIR__ . '/_init.php';
-require_admin();
 $pdo = db();
-
 if (is_post()) {
-    csrf_check();
-    $id = (int)post('id');
-    if (post('action') === 'delete') {
-        $pdo->prepare('DELETE FROM delivery_zones WHERE id = ?')->execute([$id]);
-        flash('success', 'Zone deleted.');
-    } else {
-        $name = mb_substr(post('name'), 0, 150);
-        if ($name === '') { flash('error', 'Zone name is required.'); redirect('admin/zones.php'); }
-        $data = [$name, max(0, (int)post('fee')), mb_substr(post('eta'), 0, 80), (int)post('sort_order'), post('is_active') ? 1 : 0];
-        if ($id) $pdo->prepare('UPDATE delivery_zones SET name=?, fee=?, eta=?, sort_order=?, is_active=? WHERE id=?')->execute([...$data, $id]);
-        else $pdo->prepare('INSERT INTO delivery_zones (name, fee, eta, sort_order, is_active) VALUES (?,?,?,?,?)')->execute($data);
-        flash('success', 'Zone saved.');
-    }
-    redirect('admin/zones.php');
+    require_csrf();
+    $zid = (int)post('id');
+    if (post('do') === 'delete') { $pdo->prepare('DELETE FROM zones WHERE id = ?')->execute([$zid]); audit('zone.deleted', (string)$zid); flash('Zone deleted.'); redirect('/admin/zones'); }
+    $states = array_values(array_intersect(STATES, (array)($_POST['states'] ?? [])));
+    $e = [];
+    if (mb_strlen(post('name')) < 2) $e['name'] = 'Name the zone.';
+    if (!$states) $e['states'] = 'Pick at least one state.';
+    try { $fee = parse_naira(post('fee')); } catch (InvalidArgumentException $ex) { $e['fee'] = $ex->getMessage(); $fee = null; }
+    foreach (zones(false) as $z) if ((int)$z['id'] !== $zid && $z['active']) foreach (array_intersect($z['states'], $states) as $dupS) $e['states'] = "$dupS is already in the \"{$z['name']}\" zone.";
+    if ($e) fail($e, '/admin/zones' . ($zid ? '?edit=' . $zid : ''));
+    $vals = [mb_substr(post('name'), 0, 120), json_encode($states), $fee, max(0, (int)post('lead_days')), post('active') ? 1 : 0];
+    if ($zid) $pdo->prepare('UPDATE zones SET name=?, states=?, fee=?, lead_days=?, active=? WHERE id=?')->execute([...$vals, $zid]);
+    else $pdo->prepare('INSERT INTO zones (name, states, fee, lead_days, active) VALUES (?,?,?,?,?)')->execute($vals);
+    audit('zone.saved', post('name')); flash('Delivery zone saved.'); redirect('/admin/zones');
 }
-$edit = null;
-if (get('edit')) { $s = $pdo->prepare('SELECT * FROM delivery_zones WHERE id = ?'); $s->execute([(int)get('edit')]); $edit = $s->fetch(); }
-$rows = $pdo->query('SELECT * FROM delivery_zones ORDER BY sort_order, id')->fetchAll();
-
-$adminTitle = 'Delivery zones';
-require __DIR__ . '/_header.php';
-?>
-<div class="alert alert-info"><span>Customers pick a zone at checkout and its fee is added to the order. Free-delivery threshold and store pickup are in <?= is_super() ? '<a href="' . url('admin/settings.php?tab=delivery') . '" style="text-decoration:underline">Settings → Delivery</a>' : 'Settings' ?>.</span></div>
-<div class="split">
-  <div class="card flush-sm">
-    <table class="table cards">
-      <thead><tr><th>Zone</th><th>Fee</th><th>Delivery time</th><th>Status</th><th></th></tr></thead>
-      <tbody>
-      <?php foreach ($rows as $z): ?>
-        <tr>
-          <td class="t-main"><div class="t-name"><?= e($z['name']) ?></div></td>
-          <td data-label="Fee"><strong><?= money($z['fee']) ?></strong></td>
-          <td data-label="Delivery time"><?= e($z['eta'] ?: '—') ?></td>
-          <td data-label="Status"><span class="pill <?= $z['is_active'] ? 'on' : 'off' ?>"><?= $z['is_active'] ? 'Active' : 'Off' ?></span></td>
-          <td class="t-actions"><div class="btn-row">
-            <a class="btn btn-outline btn-sm" href="?edit=<?= $z['id'] ?>#form"><i class="fa-solid fa-pen"></i></a>
-            <form method="post" data-confirm="Delete this zone?"><?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= $z['id'] ?>"><button class="btn btn-danger btn-sm"><i class="fa-regular fa-trash-can"></i></button></form>
-          </div></td>
-        </tr>
-      <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
-  <div class="card" id="form">
-    <h3><?= $edit ? 'Edit zone' : 'Add zone' ?></h3>
-    <form method="post" class="form-grid">
-      <?= csrf_field() ?><input type="hidden" name="id" value="<?= (int)($edit['id'] ?? 0) ?>">
-      <div class="field"><label>Zone / area name *</label><input name="name" required value="<?= e($edit['name'] ?? '') ?>" placeholder="e.g. Wuse, Garki, Maitama"></div>
-      <div class="field"><label>Delivery fee (<?= e(setting('currency')) ?>)</label><input type="number" name="fee" min="0" value="<?= (int)($edit['fee'] ?? 0) ?>" inputmode="numeric"></div>
-      <div class="field"><label>Delivery time</label><input name="eta" value="<?= e($edit['eta'] ?? '') ?>" placeholder="e.g. Same day"></div>
-      <div class="field"><label>Order</label><input type="number" name="sort_order" value="<?= (int)($edit['sort_order'] ?? count($rows) + 1) ?>"></div>
-      <label class="check"><input type="checkbox" name="is_active" value="1" <?= ($edit['is_active'] ?? 1) ? 'checked' : '' ?>> Active</label>
-      <button class="btn btn-primary" type="submit">Save zone</button>
-      <?php if ($edit): ?><a class="btn btn-outline" href="<?= url('admin/zones.php') ?>">Cancel</a><?php endif; ?>
-    </form>
-  </div>
-</div>
-<?php require __DIR__ . '/_footer.php'; ?>
+$edit = null; if (q('edit')) foreach (zones(false) as $z) if ((int)$z['id'] === (int)q('edit')) $edit = $z;
+$zs = zones(false);
+$covered = []; foreach ($zs as $z) if ($z['active']) $covered = array_merge($covered, $z['states']);
+admin_open('Delivery zones');
+echo ahead('Delivery zones', 'Flat delivery fees for parts, supplies and light equipment. Heavy items and states outside every zone get a delivery quote after the order.');
+$c = csrf_field();
+$t = '<div class="scroll"><table class="tbl cards"><thead><tr><th>Zone</th><th>States</th><th class="r">Fee</th><th class="r">Days</th><th>Status</th><th></th></tr></thead><tbody>';
+foreach ($zs as $z) $t .= '<tr><td class="first"><b>' . h($z['name']) . '</b></td><td data-l="States" class="sm">' . h(implode(', ', $z['states'])) . '</td><td data-l="Fee" class="r tab">' . ($z['fee'] === null ? 'Quoted' : naira($z['fee'])) . '</td><td data-l="Days" class="r tab">' . (int)$z['lead_days'] . '</td><td data-l="Status">' . badge($z['active'] ? 'Active' : 'Off', $z['active'] ? 'ok' : '') . '</td><td><a class="btn out sm" href="' . h(aurl('zones?edit=' . $z['id'])) . '">Edit</a></td></tr>';
+$sel = $_SESSION['old']['states'] ?? ($edit['states'] ?? []);
+$boxes = '<div class="grid g3" style="gap:.1rem .75rem;max-height:280px;overflow:auto;border:1px solid var(--steel);padding:.5rem">';
+foreach (STATES as $s) $boxes .= '<label class="chk"><input type="checkbox" name="states[]" value="' . h($s) . '"' . (in_array($s, $sel, true) ? ' checked' : '') . '> ' . h($s) . (in_array($s, $covered, true) && !in_array($s, $edit['states'] ?? [], true) ? ' <span class="xs muted">(zoned)</span>' : '') . '</label>';
+$boxes .= '</div>' . ferr('states');
+$f = '<form method="post" novalidate>' . $c . '<input type="hidden" name="id" value="' . (int)($edit['id'] ?? 0) . '">' . field('Zone name', 'zn', inp('name', $edit['name'] ?? '', '', 'zn'), ['name' => 'name'])
+    . '<div class="grid g2" style="gap:0 1rem">' . field('Flat fee (₦)', 'zf', inp('fee', naira_input($edit['fee'] ?? null), 'inputmode="decimal" placeholder="Blank = always quote"', 'zf'), ['name' => 'fee']) . field('Working days', 'zl', inp('lead_days', $edit['lead_days'] ?? 3, 'type="number" min="0"', 'zl'), ['name' => 'lead_days']) . '</div>'
+    . '<p class="l">States in this zone</p>' . $boxes . cb('active', (bool)($edit['active'] ?? 1), 'Active') . '<div class="row mt4"><button class="btn">' . ($edit ? 'Save zone' : 'Add zone') . '</button>' . ($edit ? '<a class="link" href="' . h(aurl('zones')) . '">Cancel</a>' : '') . '</div></form>'
+    . ($edit ? '<form method="post" class="mt4" data-confirm="Delete this zone?">' . $c . '<input type="hidden" name="do" value="delete"><input type="hidden" name="id" value="' . (int)$edit['id'] . '"><button class="btn ghost sm" style="color:var(--danger)">Delete zone</button></form>' : '');
+echo '<div class="split admin" style="align-items:start"><div>' . panel('Zones', $t . '</tbody></table></div>') . note('Collection', 'Customers can always choose to collect from your yard when collection is switched on in Settings.') . '</div><div>' . panel($edit ? 'Edit zone' : 'Add a zone', $f) . '</div></div>';
+admin_close();

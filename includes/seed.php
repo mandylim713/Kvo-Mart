@@ -1,199 +1,106 @@
 <?php
 /**
- * First-run seed data. All of it is placeholder content that the owner
- * replaces from the admin dashboard.
+ * First-run data: the catalogue, categories, zones, pages and settings
+ * from the approved demo. Everything here is editable in the admin.
  */
-
-function seed_placeholder_svg(string $file, string $title, string $c1, string $c2, string $label = 'KVO MART'): string
-{
-    $dir = __DIR__ . '/../uploads/products';
-    if (!is_dir($dir)) @mkdir($dir, 0755, true);
-    $words = explode(' ', $title);
-    $lines = [];
-    $cur = '';
-    foreach ($words as $w) {
-        if (strlen($cur . ' ' . $w) > 16 && $cur !== '') { $lines[] = $cur; $cur = $w; }
-        else $cur = trim($cur . ' ' . $w);
-    }
-    if ($cur !== '') $lines[] = $cur;
-    $lines = array_slice($lines, 0, 3);
-    $text = '';
-    $y = 430 - (count($lines) - 1) * 22;
-    foreach ($lines as $i => $l) {
-        $text .= '<text x="300" y="' . ($y + $i * 44) . '" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="36" font-weight="700" fill="#ffffff">' . htmlspecialchars($l) . '</text>';
-    }
-    $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">'
-        . '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' . $c1 . '"/><stop offset="1" stop-color="' . $c2 . '"/></linearGradient></defs>'
-        . '<rect width="600" height="600" fill="url(#g)"/>'
-        . '<circle cx="520" cy="80" r="140" fill="#ffffff" opacity=".08"/><circle cx="60" cy="560" r="160" fill="#000000" opacity=".06"/>'
-        . '<g transform="translate(300 230)" fill="none" stroke="#ffffff" stroke-width="10" stroke-linejoin="round" opacity=".95">'
-        . '<path d="M-90 -40 L0 -90 L90 -40 L90 60 L0 110 L-90 60 Z"/><path d="M-90 -40 L0 10 L90 -40 M0 10 L0 110"/></g>'
-        . $text
-        . '<text x="300" y="560" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" letter-spacing="6" fill="#ffffff" opacity=".7">' . htmlspecialchars($label) . '</text>'
-        . '</svg>';
-    file_put_contents($dir . '/' . $file, $svg);
-    return 'uploads/products/' . $file;
-}
-
-function seed_slide_svg(string $file, string $c1, string $c2): string
-{
-    $dir = __DIR__ . '/../uploads/branding';
-    if (!is_dir($dir)) @mkdir($dir, 0755, true);
-    $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" preserveAspectRatio="xMidYMid slice">'
-        . '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' . $c1 . '"/><stop offset="1" stop-color="' . $c2 . '"/></linearGradient></defs>'
-        . '<rect width="1600" height="700" fill="url(#g)"/>'
-        . '<circle cx="1300" cy="200" r="320" fill="#fff" opacity=".07"/><circle cx="1450" cy="620" r="220" fill="#fff" opacity=".05"/>'
-        . '<g transform="translate(1180 360)" fill="none" stroke="#fff" stroke-width="14" stroke-linejoin="round" opacity=".25">'
-        . '<path d="M-180 -80 L0 -180 L180 -80 L180 120 L0 220 L-180 120 Z"/><path d="M-180 -80 L0 20 L180 -80 M0 20 L0 220"/></g>'
-        . '</svg>';
-    file_put_contents($dir . '/' . $file, $svg);
-    return 'uploads/branding/' . $file;
-}
-
 function seed_database(PDO $pdo): void
 {
-    $now = date('Y-m-d H:i:s');
+    $now = date('c');
+    $data = json_decode(file_get_contents(__DIR__ . '/seed_data.json'), true);
 
-    // ---------- settings ----------
     $settings = [
-        'site_name'          => 'KVO Mart',
-        'company_name'       => 'KVO Mart Ideal Services Ltd.',
-        'tagline'            => 'Quality products, fair prices, delivered to your door.',
-        'meta_description'   => 'KVO Mart Ideal Services Ltd. — shop groceries, household essentials, electronics, appliances and more online with fast delivery across Nigeria.',
-        'logo'               => '',
-        'favicon'            => '',
-        'color_primary'      => '#0B6E4F',
-        'color_accent'       => '#F59E0B',
-        'currency'           => '₦',
-        'phone'              => '+234 800 000 0000',
-        'phone2'             => '',
-        'whatsapp'           => '2348000000000',
-        'email'              => 'info@kvomart.com',
-        'address'            => 'Store address, City, Nigeria',
-        'opening_hours'      => 'Mon – Sat: 8:00am – 8:00pm · Sun: 12:00pm – 6:00pm',
-        'map_embed'          => '',
-        'facebook'           => '',
-        'instagram'          => '',
-        'twitter'            => '',
-        'tiktok'             => '',
-        'topbar_text'        => 'Free delivery on orders above ₦50,000 within the city',
-        'free_delivery_min'  => '50000',
-        'pickup_enabled'     => '1',
-        'pickup_address'     => 'Pick up from our store during opening hours.',
-        'pay_flutterwave'    => '0',
-        'flw_public_key'     => '',
-        'flw_secret_key'     => '',
-        'flw_hash'           => '',
-        'pay_transfer'       => '1',
-        'bank_name'          => 'Bank Name',
-        'bank_account_name'  => 'KVO Mart Ideal Services Ltd.',
-        'bank_account_no'    => '0000000000',
-        'pay_pod'            => '1',
-        'pay_whatsapp'       => '1',
-        'min_order'          => '0',
-        'notify_email'       => 'info@kvomart.com',
-        'send_emails'        => '0',
-        'about_short'        => 'KVO Mart Ideal Services Ltd. is your one-stop shop for everyday essentials and quality home products. We source genuine products, price them fairly and deliver them quickly, so you can shop with confidence.',
-        'show_powered_by'    => '1',
+        'business_name'       => 'KVO Mart Ideal Services Ltd.',
+        'short_name'          => 'KVO Mart',
+        'tagline'             => 'Contracts, Real Estates & Supplies',
+        'meta_description'    => 'KVO Mart supplies tractors, construction machinery, industrial equipment, spare parts and commercial supplies across Nigeria — priced in Naira, with delivery arranged to your site.',
+        'phone'               => '',
+        'email'               => '',
+        'whatsapp'            => '',
+        'address'             => '',
+        'hours'               => '',
+        'announcement'        => '',
+        'logo'                => 'assets/img/logo.jpg',
+        'tax_bps'             => '0',
+        'tax_label'           => 'VAT',
+        'prices_include_tax'  => '1',
+        'pickup_enabled'      => '1',
+        'pickup_note'         => 'Collect from our yard — we confirm the collection time after payment.',
+        'bank_transfer_enabled' => '1',
+        'bank_instructions'   => "Bank: (add your bank)\nAccount name: KVO Mart Ideal Services Ltd.\nAccount number: (add account number)\nUse your payment reference as the narration.",
+        'card_hold_min'       => '60',
+        'transfer_hold_hours' => '48',
+        'admin_email'         => '',
+        'send_emails'         => '1',
+        'mail_from'           => '',
+        'paystack_enabled'    => '0',
+        'paystack_public'     => '',
+        'paystack_secret'     => '',
+        'flutterwave_enabled' => '0',
+        'flutterwave_public'  => '',
+        'flutterwave_secret'  => '',
+        'flutterwave_hash'    => '',
+        'facebook' => '', 'instagram' => '', 'linkedin' => '', 'x' => '',
+        'show_credit'         => '1',
     ];
     $st = $pdo->prepare('INSERT INTO settings (skey, svalue) VALUES (?, ?)');
     foreach ($settings as $k => $v) $st->execute([$k, $v]);
 
-    // ---------- admin ----------
-    $pdo->prepare('INSERT INTO admins (name, email, password, role, is_active, created_at) VALUES (?,?,?,?,1,?)')
-        ->execute(['Administrator', 'admin@kvomart.com', password_hash('admin123', PASSWORD_DEFAULT), 'admin', $now]);
+    // first administrator — must be changed after first sign-in
+    $pdo->prepare('INSERT INTO staff (name, email, password, role, active, created) VALUES (?,?,?,?,1,?)')
+        ->execute(['Administrator', 'admin@kvomart.com', password_hash('KvoAdmin2026', PASSWORD_DEFAULT), 'SUPER_ADMIN', $now]);
 
-    // ---------- categories ----------
-    $cats = [
-        ['Groceries & Provisions', 'fa-basket-shopping', 'Rice, grains, pasta, oils, spices and pantry staples.', ['#0B6E4F', '#14A06F']],
-        ['Beverages & Drinks',     'fa-mug-hot',         'Juices, soft drinks, water, tea, coffee and beverages.', ['#B45309', '#F59E0B']],
-        ['Household & Cleaning',   'fa-spray-can-sparkles','Detergents, cleaners, tissues and home care.', ['#1D4ED8', '#60A5FA']],
-        ['Personal Care',          'fa-pump-soap',       'Toiletries, skincare, hair care and hygiene.', ['#BE185D', '#F472B6']],
-        ['Electronics & Gadgets',  'fa-plug',            'Phones accessories, power banks, lighting and gadgets.', ['#111827', '#4B5563']],
-        ['Home Appliances',        'fa-blender',         'Blenders, kettles, irons, fans and kitchen appliances.', ['#6D28D9', '#A78BFA']],
-        ['Kitchen & Dining',       'fa-utensils',        'Cookware, utensils, storage and dining ware.', ['#B91C1C', '#F87171']],
-        ['Baby & Kids',            'fa-baby',            'Diapers, baby food, wipes and kids essentials.', ['#0E7490', '#22D3EE']],
-    ];
-    $stc = $pdo->prepare('INSERT INTO categories (name, slug, icon, image, description, sort_order, is_active) VALUES (?,?,?,?,?,?,1)');
-    $catIds = [];
-    foreach ($cats as $i => $c) {
-        $slug = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $c[0]), '-'));
-        $img = seed_placeholder_svg('cat-' . $slug . '.svg', $c[0], $c[3][0], $c[3][1], 'CATEGORY');
-        $stc->execute([$c[0], $slug, $c[1], $img, $c[2], $i + 1]);
-        $catIds[$i] = (int)$pdo->lastInsertId();
+    $sc = $pdo->prepare('INSERT INTO categories (slug, name, kind, description, sort_order, active) VALUES (?,?,?,?,?,1)');
+    foreach ($data['categories'] as $i => $c) $sc->execute([$c['slug'], $c['name'], $c['kind'], $c['desc'], $i + 1]);
+
+    $sp = $pdo->prepare('INSERT INTO products (sku, slug, name, model, kind, cat, brand, cond, mode, price, on_hand, reserved, low, inv, dq, featured, status, description, specs, image, credit, credit_url, sales, views, created, updated) VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,\'PUBLISHED\',?,?,?,?,?,0,0,?,?)');
+    $ph = $pdo->prepare('INSERT INTO price_history (product_id, price, at) VALUES (?,?,?)');
+    $mv = $pdo->prepare('INSERT INTO movements (product_id, sku, type, qty, on_hand, reserved, reason, order_ref, by_name, at) VALUES (?,?,\'RECEIPT\',?,?,0,\'Opening stock\',NULL,\'System\',?)');
+    $n = count($data['products']);
+    foreach ($data['products'] as $i => $p) {
+        $sku = str_replace(['SAMPLE-', 'DEMO-'], 'KVO-', $p['sku']);
+        $price = $p['price'] === null ? null : (int)$p['price'];
+        $desc = $p['kind'] === 'EQUIPMENT'
+            ? $p['name'] . '. ' . ($price === null ? 'Price on request' : 'Price shown is a typical Nigerian market asking price for this model and condition') . '. Our sales team confirms availability, specification, hours and final price before you buy. Delivery is ' . ($p['dq'] ? 'quoted separately for your approval, based on size, weight and route' : 'calculated at checkout') . '.'
+            : $p['name'] . '. Contact us for bulk pricing.';
+        $created = date('c', time() - ($n - $i) * 3600);
+        $img = $p['img'] ? 'uploads/products/' . $p['img'] . '.jpg' : null;
+        $sp->execute([$sku, $p['slug'], $p['name'], $p['model'] ?: '', $p['kind'], $p['cat'], $p['brand'] === 'Generic' ? '' : ($p['brand'] ?: ''), $p['condition'], $p['mode'], $price, (int)$p['stock'], $p['inv'] === 'UNIQUE_UNIT' ? 1 : 3, $p['inv'], $p['dq'] ? 1 : 0, $p['featured'] ? 1 : 0, $desc, json_encode($p['specs'] ?: []), $img, $p['credit'], $p['creditUrl'], $created, $created]);
+        $id = (int)$pdo->lastInsertId();
+        if ($price !== null) $ph->execute([$id, $price, $created]);
+        $mv->execute([$id, $sku, (int)$p['stock'], (int)$p['stock'], $created]);
     }
 
-    // ---------- products: [catIndex, name, brand, unit, price, old, stock, featured, deal] ----------
-    $products = [
-        [0, 'Premium Long Grain Parboiled Rice', 'Royal Stallion', '50kg bag', 78000, 82000, 40, 1, 0],
-        [0, 'Pure Vegetable Cooking Oil', 'Power Oil', '5 litres', 14500, 15800, 60, 1, 1],
-        [0, 'Spaghetti Pasta', 'Golden Penny', 'Carton of 20', 17500, 0, 35, 0, 0],
-        [0, 'Seasoning Cubes', 'Maggi', 'Pack of 100', 2400, 2700, 120, 0, 1],
-        [1, 'Malt Drink Can', 'Malta Guinness', 'Pack of 24', 13800, 0, 50, 1, 0],
-        [1, 'Pure Orange Juice', 'Chivita 100%', '1 litre', 2300, 2500, 80, 0, 1],
-        [1, 'Table Water', 'Eva', 'Pack of 12 (75cl)', 3200, 0, 90, 0, 0],
-        [1, 'Instant Coffee', 'Nescafé Classic', '200g jar', 6800, 7400, 30, 0, 0],
-        [2, 'Washing Detergent Powder', 'Ariel', '2kg', 5600, 6200, 70, 1, 1],
-        [2, 'Toilet Tissue Rolls', 'Rose Plus', 'Pack of 12', 4200, 0, 100, 0, 0],
-        [2, 'Multi-Surface Cleaner', 'Hypo', '1 litre', 1800, 0, 65, 0, 0],
-        [3, 'Moisturising Body Lotion', 'Nivea', '400ml', 5900, 6500, 45, 1, 0],
-        [3, 'Antibacterial Bar Soap', 'Dettol', 'Pack of 4', 2900, 0, 85, 0, 1],
-        [3, 'Fluoride Toothpaste', 'Close-Up', '140g', 1500, 0, 110, 0, 0],
-        [4, '20000mAh Fast-Charge Power Bank', 'Oraimo', '1 unit', 21500, 24000, 25, 1, 1],
-        [4, 'Rechargeable LED Lantern', 'Lontor', '1 unit', 9800, 0, 30, 0, 0],
-        [4, 'Wireless Bluetooth Earbuds', 'Oraimo', '1 pair', 16500, 18500, 20, 0, 0],
-        [5, 'Electric Blender with Grinder', 'Binatone', '1.5 litres', 32000, 36000, 15, 1, 0],
-        [5, 'Electric Kettle Stainless', 'Scanfrost', '1.7 litres', 14800, 0, 22, 0, 1],
-        [5, '18-inch Standing Fan', 'Ox', '1 unit', 38500, 42000, 12, 1, 0],
-        [6, 'Non-Stick Cookware Set', 'Tower', '5 pieces', 45000, 52000, 10, 1, 0],
-        [6, 'Airtight Food Storage Containers', 'Kitchen Pro', 'Set of 6', 8900, 0, 40, 0, 0],
-        [7, 'Baby Diapers Size 4', 'Molfix', 'Jumbo pack (64)', 15500, 16800, 35, 0, 1],
-        [7, 'Baby Wet Wipes', 'Huggies', 'Pack of 3 x 56', 4800, 0, 60, 0, 0],
-    ];
-    $stp = $pdo->prepare('INSERT INTO products (category_id, name, slug, sku, brand, unit, short_desc, description, specs, price, old_price, stock, low_stock, image, is_featured, is_deal, is_active, views, sold, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,5,?,?,?,1,0,0,?,?)');
-    $stl = $pdo->prepare('INSERT INTO stock_log (product_id, qty_change, stock_after, reason, admin_id, created_at) VALUES (?,?,?,?,1,?)');
-    foreach ($products as $i => $p) {
-        [$ci, $name, $brand, $unit, $price, $old, $stock, $feat, $deal] = $p;
-        $slug = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $name), '-'));
-        $c = $cats[$ci][3];
-        $img = seed_placeholder_svg('p-' . $slug . '.svg', $name, $c[0], $c[1]);
-        $sku = 'KVO-' . str_pad((string)($i + 1), 4, '0', STR_PAD_LEFT);
-        $short = "$brand $name — $unit. Genuine product, carefully stored and ready for delivery.";
-        $desc = "<p>$brand $name ($unit) sourced directly from trusted distributors. Every item is checked before dispatch so you receive it in perfect condition.</p><p>This product description is a placeholder — update it with the real details from the admin dashboard.</p>";
-        $specs = "Brand: $brand\nPack size: $unit\nCategory: {$cats[$ci][0]}\nCondition: Brand new";
-        $created = date('Y-m-d H:i:s', strtotime("-" . (count($products) - $i) . " hours"));
-        $stp->execute([$catIds[$ci], $name, $slug, $sku, $brand, $unit, $short, $desc, $specs, $price, $old, $stock, $img, $feat, $deal, $created, $created]);
-        $stl->execute([(int)$pdo->lastInsertId(), $stock, $stock, 'Opening stock', $now]);
-    }
+    $sz = $pdo->prepare('INSERT INTO zones (name, states, fee, lead_days, active) VALUES (?,?,?,?,1)');
+    $sz->execute(['FCT', json_encode(['FCT']), 1500000, 2]);
+    $sz->execute(['North Central', json_encode(['Nasarawa', 'Niger', 'Kogi', 'Kwara', 'Plateau', 'Benue']), 2500000, 4]);
+    $sz->execute(['Lagos & South West', json_encode(['Lagos', 'Ogun', 'Oyo', 'Osun', 'Ondo', 'Ekiti']), 3500000, 5]);
 
-    // ---------- delivery zones ----------
-    $zones = [
-        ['Within the city', 1500, 'Same day / next day'],
-        ['City outskirts & satellite towns', 3000, '1 – 2 days'],
-        ['Neighbouring states', 6000, '2 – 4 days'],
-        ['Other states in Nigeria', 9000, '3 – 6 days'],
-    ];
-    $stz = $pdo->prepare('INSERT INTO delivery_zones (name, fee, eta, sort_order, is_active) VALUES (?,?,?,?,1)');
-    foreach ($zones as $i => $z) $stz->execute([$z[0], $z[1], $z[2], $i + 1]);
+    $pdo->prepare('INSERT INTO promos (code, description, type, value, min_order, max_disc, starts, ends, max_uses, per_customer, uses, active) VALUES (?,?,?,?,?,?,?,?,?,?,0,0)')
+        ->execute(['KVO10', '10% off orders over ₦100,000 (max ₦500,000 off)', 'PERCENT', 1000, 10000000, 50000000, date('c'), date('c', time() + 30 * 86400), 100, 1]);
 
-    // ---------- slides ----------
-    $slides = [
-        ['Everyday essentials, delivered fast', 'Groceries, household items and personal care at fair prices — order online and we bring it to your door.', 'Shop now', 'shop.php', seed_slide_svg('slide-1.svg', '#0B6E4F', '#064E3B')],
-        ['Upgrade your home', 'Quality appliances and kitchenware from brands you trust, with warranty support.', 'Browse appliances', 'shop.php?cat=home-appliances', seed_slide_svg('slide-2.svg', '#1E293B', '#0B6E4F')],
-        ['Hot deals this week', 'Save big on selected products while stock lasts.', 'See deals', 'shop.php?deals=1', seed_slide_svg('slide-3.svg', '#B45309', '#7C2D12')],
-    ];
-    $sts = $pdo->prepare('INSERT INTO slides (title, subtitle, button_text, button_link, image, sort_order, is_active) VALUES (?,?,?,?,?,?,1)');
-    foreach ($slides as $i => $s) $sts->execute([$s[0], $s[1], $s[2], $s[3], $s[4], $i + 1]);
+    $sr = $pdo->prepare('INSERT INTO properties (slug, title, type, listing, location, state, price, size, beds, features, description, image, active, sort_order, created) VALUES (?,?,?,?,?,?,?,?,NULL,?,?,NULL,1,?,?)');
+    $sr->execute(['commercial-plot-kubwa', 'Commercial plot', 'Land', 'Sale', 'Kubwa', 'FCT', null, 1200, json_encode(['Road frontage', 'Fenced']), 'Commercial plot with road frontage. Property is sold by enquiry; our team arranges viewings and documentation.', 1, $now]);
+    $sr->execute(['warehouse-idu', 'Warehouse for lease', 'Warehouse', 'Lease', 'Idu industrial area', 'FCT', 1800000000, 2500, json_encode(['Loading bay', 'Three-phase power']), 'Warehouse for lease in Idu industrial area. Price shown is per year.', 2, $now]);
 
-    // ---------- pages ----------
     $pages = [
-        ['About Us', 'about', '<h2>Who we are</h2><p>KVO Mart Ideal Services Ltd. is a retail and supply company committed to making quality products easy to buy. From groceries and household essentials to electronics and home appliances, we stock genuine products at fair prices.</p><h2>Our promise</h2><ul><li>Genuine products from trusted brands and distributors</li><li>Fair, transparent pricing</li><li>Fast, reliable delivery</li><li>Friendly support before and after you buy</li></ul><p>Edit this page anytime from Admin → Pages.</p>'],
-        ['Delivery Information', 'delivery', '<p>We deliver to all locations listed at checkout. Delivery fees depend on your zone and are shown before you pay.</p><ul><li>Orders confirmed before 2pm are usually dispatched the same day within the city.</li><li>You will receive a call or WhatsApp message before delivery.</li><li>You can also pick up your order from our store.</li></ul>'],
-        ['Returns & Refunds', 'returns', '<p>If an item arrives damaged, expired or incorrect, contact us within 48 hours of delivery with your order number and photos. We will replace the item or refund you after inspection.</p><p>Perishable goods and opened personal care items cannot be returned unless faulty.</p>'],
-        ['Privacy Policy', 'privacy', '<p>We collect only the information needed to process your orders and improve our service: your name, phone number, email address and delivery address. We never sell your data. Card payments are processed securely by Flutterwave; we do not store card details.</p>'],
-        ['Terms & Conditions', 'terms', '<p>By using this website and placing an order you agree to these terms. Prices and availability may change without notice. An order is confirmed once payment is received or, for pay-on-delivery orders, once we confirm by phone.</p>'],
-        ['Frequently Asked Questions', 'faq', '<h3>How do I place an order?</h3><p>Add products to your cart, go to checkout, fill in your delivery details and choose a payment method.</p><h3>Which payment methods do you accept?</h3><p>Card/bank payment online, bank transfer, pay on delivery (selected areas) and WhatsApp orders.</p><h3>How can I track my order?</h3><p>Use the Track Order page with your order number and phone number.</p><h3>Can I buy in bulk?</h3><p>Yes — contact us for wholesale and bulk pricing.</p>'],
+        'about' => ['About KVO Mart', '<p><strong>KVO Mart Ideal Services Ltd.</strong> — Contracts, Real Estates &amp; Supplies.</p><p>We supply tractors, construction machinery, industrial equipment, spare parts and commercial supplies to contractors, farms and businesses across Nigeria, and handle procurement and supply contracts for projects.</p><p>Our team sources new, used and refurbished machinery, confirms specifications in writing, and arranges delivery to your site.</p>'],
+        'services' => ['Services', '<h2>Equipment sales and sourcing</h2><p>New, used and refurbished machines from stock, or sourced to your specification.</p><h2>Parts and supplies</h2><p>Spare parts, filters, implements and construction materials, with compatibility checked before you buy.</p><h2>Contracts and procurement</h2><p>Supply contracts and procurement for construction, agriculture and industrial projects.</p><h2>Real estate</h2><p>Land, warehouses and commercial property for sale or lease.</p>'],
+        'delivery-policy' => ['Delivery policy', '<p>Parts, supplies and smaller equipment ship at a fixed rate to states inside our delivery zones. The charge for your address is shown at checkout before you pay.</p><h2>Heavy machinery</h2><p>Excavators, dozers, graders, rollers, tractors and other large machines are moved on low-bed trailers. The cost depends on machine size and weight, loading, distance and route. After your order we send a delivery quote; you approve and pay it before dispatch, or you can collect the machine yourself.</p><h2>Delivery status</h2><p>You can follow each stage — assessment, quote, dispatch, in transit, delivered — from your order page.</p><h2>Inspection on arrival</h2><p>Please inspect the machine on delivery and note any issue on the delivery note before signing.</p>'],
+        'returns' => ['Returns and refunds', '<p>Unused spare parts and supplies in original packaging can be returned within 7 days of delivery. Wrong or faulty items are replaced or refunded.</p><h2>Equipment</h2><p>Machines are sold after inspection. Report any issue that differs from the agreed specification within 48 hours of delivery and we\'ll work with you to resolve it.</p><h2>Refunds</h2><p>Approved refunds go back to the original payment method or by bank transfer. Partial refunds are possible where part of an order is returned.</p>'],
+        'privacy' => ['Privacy policy', '<p>We collect the details you give us — name, contact details, delivery address and order history — to process orders, arrange delivery and respond to enquiries.</p><p>Payments are processed by our payment providers. We don\'t store card details.</p><p>We don\'t sell your information. You can ask us to correct or delete your personal data at any time.</p>'],
+        'terms' => ['Terms and conditions', '<p>Prices are in Nigerian Naira. An order is confirmed once payment is verified. Stock is held for a limited time while payment is pending; unpaid orders are cancelled when the hold expires.</p><p>Machines marked “Request price” are sold by written quotation. Quotations state their validity period and payment terms.</p><p>Delivery for heavy equipment is quoted separately and is your responsibility to approve before dispatch.</p>'],
     ];
-    $stpg = $pdo->prepare('INSERT INTO pages (title, slug, content, in_footer, is_active, updated_at) VALUES (?,?,?,1,1,?)');
-    foreach ($pages as $p) $stpg->execute([$p[0], $p[1], $p[2], $now]);
+    $spg = $pdo->prepare('INSERT INTO pages (slug, title, content, updated) VALUES (?,?,?,?)');
+    foreach ($pages as $slug => [$t, $c]) $spg->execute([$slug, $t, $c, $now]);
+
+    $faqs = [
+        ['Are the prices on the website final?', 'Listed prices are our selling prices in Naira. For machines marked “Request price”, or for special specifications, we send you a written quotation.'],
+        ['How does delivery work for heavy machinery?', 'Machines are delivered on a separate delivery quote based on size, weight, loading and route. You approve and pay the delivery quote before dispatch, or collect yourself.'],
+        ['Which payment methods do you accept?', 'Card, bank and USSD payments through our payment providers, and bank transfer (confirmed by our finance team before your order is processed).'],
+        ["Can I buy a spare part if I'm not sure it fits?", "Send a compatibility enquiry from the product page with your machine's make, model and serial number. We confirm fitment before you buy."],
+    ];
+    $sf = $pdo->prepare('INSERT INTO faqs (question, answer, sort_order) VALUES (?,?,?)');
+    foreach ($faqs as $i => $f) $sf->execute([$f[0], $f[1], $i + 1]);
+
+    $pdo->prepare('INSERT INTO audit (at, actor, action, entity, details) VALUES (?,?,?,?,?)')->execute([$now, 'System', 'site.installed', '-', 'Store set up with the approved catalogue']);
 }
